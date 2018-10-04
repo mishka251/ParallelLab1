@@ -128,7 +128,7 @@ void task4()
 
 void task5()
 {
-	const int N = 100, M = 5;
+	const int N = 50, M = 5;
 	int A[N][N], A1[N][N];
 
 	for (int i = 0; i < N; i++)
