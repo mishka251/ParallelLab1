@@ -1,10 +1,18 @@
 #include<iostream>
 #include<stdlib.h>
 #include <chrono>
-
-
+#include<functional>
+#include<string>
 
 using namespace std;
+
+
+std::function<void(int i, int N)> functions[] =
+{
+	[](int i, int n) {std::cout << i << endl; },
+	[](int i, int n) {if (i % 2 == 1) for (int j = 0; j < 1000; j++) i -= j; std::cout << i << endl;  },
+	[](int i, int n) {if (i < n / 2) for (int j = 0; j < 1000; j++) i -= j; std::cout << i << endl; }
+};
 
 
 void task1()
@@ -15,48 +23,68 @@ void task1()
 
 void task2()
 {
-	const int N = 100000;
+	const int N = 1000;
 
-	auto start = chrono::steady_clock::now();
+	/*const*/ int cnt = 10;
+
+	int time_mat[4][3];
+	string names[] = { "static", "dynamic", "dynamic 10", "guided" };
+
+
+	for (int func = 0; func < 3; func++)
+	{
+
+		auto start = chrono::steady_clock::now();
 
 #pragma omp parallel for schedule(static)
-	for (int i = 0; i < N; i++)
-		cout << i << endl;
+		for (int i = 0; i < N; i++)
+			functions[func](i, N);
 
-	auto end = chrono::steady_clock::now();
-	auto mic_s1 = std::chrono::duration_cast<chrono::microseconds>(end - start);
-	//cout << "time " << mic_s.count() << " ms" << endl;
+		auto end = chrono::steady_clock::now();
+		auto mic_s1 = std::chrono::duration_cast<chrono::microseconds>(end - start);
+		//cout << "time " << mic_s.count() << " ms" << endl;
 
-	start = chrono::steady_clock::now();
+		start = chrono::steady_clock::now();
 #pragma omp parallel for schedule(dynamic)
-	for (int i = 0; i < N; i++)
-		cout << i << endl;
-	end = chrono::steady_clock::now();
-	auto mic_s2 = std::chrono::duration_cast<chrono::microseconds>(end - start);
-	//cout << "time " << mic_s.count() << " ms" << endl;
+		for (int i = 0; i < N; i++)
+			functions[func](i, N);
 
-	start = chrono::steady_clock::now();
+		end = chrono::steady_clock::now();
+		auto mic_s2 = std::chrono::duration_cast<chrono::microseconds>(end - start);
+		//cout << "time " << mic_s.count() << " ms" << endl;
 
-#pragma omp parallel for schedule(dynamic, 10)
-	for (int i = 0; i < N; i++)
-		cout << i << endl;
-	end = chrono::steady_clock::now();
-	auto mic_s3 = std::chrono::duration_cast<chrono::microseconds>(end - start);
-	//cout << "time " << mic_s.count() << " ms" << endl;
+		start = chrono::steady_clock::now();
 
-	start = chrono::steady_clock::now();
+#pragma omp parallel for schedule(dynamic, cnt)
+		for (int i = 0; i < N; i++)
+			functions[func](i, N);
+		end = chrono::steady_clock::now();
+		auto mic_s3 = std::chrono::duration_cast<chrono::microseconds>(end - start);
+		//cout << "time " << mic_s.count() << " ms" << endl;
+
+		start = chrono::steady_clock::now();
 
 #pragma omp parallel for schedule(guided)
-	for (int i = 0; i < N; i++)
-		cout << i << endl;
+		for (int i = 0; i < N; i++)
+			functions[func](i, N);
 
-	end = chrono::steady_clock::now();
-	auto mic_s4 = std::chrono::duration_cast<chrono::microseconds>(end - start);
+		end = chrono::steady_clock::now();
+		auto mic_s4 = std::chrono::duration_cast<chrono::microseconds>(end - start);
 
-	cout << "time1 " << mic_s1.count() << " ms" << endl;
-	cout << "time2 " << mic_s2.count() << " ms" << endl;
-	cout << "time3 " << mic_s3.count() << " ms" << endl;
-	cout << "time4 " << mic_s4.count() << " ms" << endl;
+		time_mat[0][func] = mic_s1.count();
+		time_mat[1][func] = mic_s2.count();
+		time_mat[2][func] = mic_s3.count();
+		time_mat[3][func] = mic_s4.count();
+	}
+
+	cout << "название     равномерное    нечетное      первая_половина"<<endl;
+	for (int i = 0; i < 4; i++)
+	{
+		cout << names[i] << "       ";
+		for (int j = 0; j < 3; j++)
+			cout << "   " << time_mat[i][j] << "     ";
+		cout<< endl;
+	}
 }
 
 
@@ -164,11 +192,11 @@ void task5()
 #pragma omp parallel for num_threads(2) //ordered
 	for (int i = 2; i < N; i++)
 	{
-//#pragma omp ordered
-	//	{
+		//#pragma omp ordered
+			//	{
 #pragma omp parallel for num_threads(2)
-			for (int j = 2; j < N; j++)
-				A1[i][j] = A1[i - 2][j] + A1[i][j - 2];
+		for (int j = 2; j < N; j++)
+			A1[i][j] = A1[i - 2][j] + A1[i][j - 2];
 		//}
 	}
 
@@ -213,7 +241,7 @@ void task5()
 int main()
 {
 
-	task5();
+	task2();
 
 	system("pause");
 	return 0;
